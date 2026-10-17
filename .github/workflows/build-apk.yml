@@ -8,6 +8,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -44,3 +46,18 @@ jobs:
           name: dbd-html-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 7
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: Escape the Entity v1.0.${{ github.run_number }}
+          body: |
+            Мобильная версия игры Escape the Entity (стиль Dead by Daylight).
+            - Лобби с выбором персонажа
+            - Карта с деревьями и стенами
+            - Джойстик + кнопка ремонта
+            - 4 генератора, Киллер, выход
+          files: android/app/build/outputs/apk/debug/app-debug.apk
+          draft: false
+          prerelease: false
