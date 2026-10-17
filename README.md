@@ -1,2 +1,34 @@
-# dbd-html-apk
-HTML5 Dead by Daylight inspired asymmetric horror game. Builds automatically to Android APK via GitHub Actions + Capacitor.
+# DBD HTML APK
+
+HTML5 игра в стиле **Dead by Daylight** (асимметричный хоррор: выжившие vs киллер).
+
+Игра на чистом HTML/JS/Canvas. На GitHub автоматически собирается в **Android APK** через GitHub Actions + Capacitor.
+
+## Как играть
+
+- **WASD** или стрелки — движение
+- **E** — ремонт генератора (держи)
+- На мобильном: онскринные кнопки
+
+**Цель:** Отремонтируй все 3 генератора и доберись до выхода, избегая Киллера (красный круг).
+
+## Скачать APK
+
+1. Перейди во вкладку **Actions**
+2. Дождись завершения сборки "Build Android APK"
+3. Скачай артефакт `dbd-html-debug-apk`
+4. Установи `app-debug.apk` на Android устройство
+
+Любой push в `main` запускает новую сборку.
+
+## Локально
+
+Открой `www/index.html` в браузере.
+
+## Стек
+
+- HTML5 Canvas + Vanilla JS
+- Capacitor 6
+- GitHub Actions
+
+Игра — прототип. Можно расширять: мультиплеер, способности, карты и т.д.
