@@ -28,12 +28,20 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Force landscape orientation
+        run: |
+          # Force landscape in AndroidManifest
+          sed -i 's/android:screenOrientation="portrait"/android:screenOrientation="landscape"/g' android/app/src/main/AndroidManifest.xml
+          # If no orientation set, add it to the activity
+          if ! grep -q 'screenOrientation' android/app/src/main/AndroidManifest.xml; then
+            sed -i 's/<activity /<activity android:screenOrientation="landscape" /' android/app/src/main/AndroidManifest.xml
+          fi
+          echo "=== Orientation ==="
+          grep -n screenOrientation android/app/src/main/AndroidManifest.xml || echo "none found"
+
       - name: Bump versionCode so new APK can install over old one
         run: |
-          # Capacitor generates android/app/build.gradle
-          # Replace versionCode 1 with run number (always higher)
           sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
-          # Also set versionName to match release tag style
           sed -i "s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
           echo "=== Updated version ==="
           grep -n "versionCode\|versionName" android/app/build.gradle
@@ -63,12 +71,12 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Escape the Entity v1.0.${{ github.run_number }}
           body: |
-            Мобильная версия игры Escape the Entity (стиль Dead by Daylight).
+            Горизонтальная версия игры Escape the Entity.
             - Лобби с выбором персонажа
             - Карта с деревьями и стенами
             - Джойстик + кнопка ремонта
-            - 4 генератора, Киллер, выход
-            - versionCode = ${{ github.run_number }} (установка поверх старой версии)
+            - Улучшенная рисовка персонажей
+            - versionCode = ${{ github.run_number }}
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
