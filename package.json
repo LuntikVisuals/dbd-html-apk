@@ -1,0 +1,14 @@
+{
+  "name": "dbd-html-apk",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HTML5 Dead by Daylight inspired game that builds to Android APK",
+  "dependencies": {
+    "@capacitor/android": "^6.1.0",
+    "@capacitor/cli": "^6.1.0",
+    "@capacitor/core": "^6.1.0"
+  },
+  "scripts": {
+    "build": "echo 'No build step needed'"
+  }
+}
