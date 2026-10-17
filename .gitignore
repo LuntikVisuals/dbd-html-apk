@@ -1,0 +1,8 @@
+node_modules/
+android/
+ios/
+.capacitor/
+*.apk
+*.aab
+.DS_Store
+.env
