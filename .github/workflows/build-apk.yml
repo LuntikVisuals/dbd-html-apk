@@ -14,47 +14,29 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Add Android platform
-        run: npx cap add android
-
-      - name: Sync Capacitor
-        run: npx cap sync android
-
-      - name: Force landscape orientation
-        run: |
-          # Force landscape in AndroidManifest
-          sed -i 's/android:screenOrientation="portrait"/android:screenOrientation="landscape"/g' android/app/src/main/AndroidManifest.xml
-          # If no orientation set, add it to the activity
-          if ! grep -q 'screenOrientation' android/app/src/main/AndroidManifest.xml; then
-            sed -i 's/<activity /<activity android:screenOrientation="landscape" /' android/app/src/main/AndroidManifest.xml
-          fi
-          echo "=== Orientation ==="
-          grep -n screenOrientation android/app/src/main/AndroidManifest.xml || echo "none found"
-
-      - name: Bump versionCode so new APK can install over old one
-        run: |
-          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
-          sed -i "s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
-          echo "=== Updated version ==="
-          grep -n "versionCode\|versionName" android/app/build.gradle
-
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Bump versionCode so new APK can install over old one
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          sed -i "s/versionName '1.0.0'/versionName '1.0.${{ github.run_number }}'/" android/app/build.gradle
+          echo "=== Updated version ==="
+          grep -n "versionCode\|versionName" android/app/build.gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x android/gradlew || true
+
       - name: Build Debug APK
         run: |
           cd android
+          # Generate wrapper if missing
+          if [ ! -f gradlew ]; then
+            gradle wrapper
+          fi
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -71,12 +53,10 @@ jobs:
           tag_name: v1.0.${{ github.run_number }}
           name: Escape the Entity v1.0.${{ github.run_number }}
           body: |
-            Горизонтальная версия игры Escape the Entity.
-            - Лобби с выбором персонажа
-            - Карта с деревьями и стенами
-            - Джойстик + кнопка ремонта
-            - Улучшенная рисовка персонажей
-            - versionCode = ${{ github.run_number }}
+            HTML игра Escape the Entity в WebView (landscape).
+            Архитектура по принципу zavodnye-koshmary: чистый Android WebView, HTML в assets.
+            - Лобби, персонажи, карта, джойстик
+            - versionCode = ${{ github.run_number }} (установка поверх)
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
