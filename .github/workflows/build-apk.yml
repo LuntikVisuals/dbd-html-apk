@@ -28,6 +28,16 @@ jobs:
       - name: Sync Capacitor
         run: npx cap sync android
 
+      - name: Bump versionCode so new APK can install over old one
+        run: |
+          # Capacitor generates android/app/build.gradle
+          # Replace versionCode 1 with run number (always higher)
+          sed -i "s/versionCode 1/versionCode ${{ github.run_number }}/" android/app/build.gradle
+          # Also set versionName to match release tag style
+          sed -i "s/versionName \"1.0\"/versionName \"1.0.${{ github.run_number }}\"/" android/app/build.gradle
+          echo "=== Updated version ==="
+          grep -n "versionCode\|versionName" android/app/build.gradle
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
@@ -58,6 +68,7 @@ jobs:
             - Карта с деревьями и стенами
             - Джойстик + кнопка ремонта
             - 4 генератора, Киллер, выход
+            - versionCode = ${{ github.run_number }} (установка поверх старой версии)
           files: android/app/build/outputs/apk/debug/app-debug.apk
           draft: false
           prerelease: false
