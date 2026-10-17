@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>DBD HTML</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #0a0a0a;
+  color: #eee;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  overflow: hidden;
+  touch-action: none;
+}
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  background: #111;
+  cursor: crosshair;
+}
+#hud {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  font-size: 14px;
+  text-shadow: 1px 1px 2px #000;
+  pointer-events: none;
+}
+#controls {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  display: none;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+@media (pointer: coarse) {
+  #controls { display: flex; }
+}
+.btn {
+  width: 70px;
+  height: 70px;
+  background: rgba(255,255,255,0.15);
+  border: 2px solid #555;
+  border-radius: 12px;
+  color: #fff;
+  font-size: 18px;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  touch-action: none;
+}
+.btn:active { background: rgba(255,255,255,0.3); }
+#msg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 32px;
+  text-align: center;
+  display: none;
+  text-shadow: 0 0 10px #000;
+  pointer-events: none;
+}
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+<div id="hud">
+  Генераторы: <span id="gens">0</span>/3<br>
+  Здоровье: <span id="hp">3</span>
+</div>
+<div id="msg"></div>
+<div id="controls">
+  <div class="btn" id="btn-up">↑</div>
+  <div class="btn" id="btn-left">←</div>
+  <div class="btn" id="btn-down">↓</div>
+  <div class="btn" id="btn-right">→</div>
+  <div class="btn" id="btn-e" style="width:90px">Ремонт</div>
+</div>
+
+<script>
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+const hudGens = document.getElementById('gens');
+const hudHp = document.getElementById('hp');
+const msgEl = document.getElementById('msg');
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+const keys = {};
+const touch = { up: false, down: false, left: false, right: false, e: false };
+
+window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+function bindBtn(id, dir) {
+  const el = document.getElementById(id);
+  const start = (e) => { e.preventDefault(); touch[dir] = true; };
+  const end = (e) => { e.preventDefault(); touch[dir] = false; };
+  el.addEventListener('touchstart', start);
+  el.addEventListener('touchend', end);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('mouseup', end);
+  el.addEventListener('mouseleave', end);
+}
+bindBtn('btn-up', 'up');
+bindBtn('btn-down', 'down');
+bindBtn('btn-left', 'left');
+bindBtn('btn-right', 'right');
+bindBtn('btn-e', 'e');
+
+class Entity {
+  constructor(x, y, r, color) {
+    this.x = x; this.y = y; this.r = r; this.color = color;
+  }
+  draw() {
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+    ctx.fillStyle = this.color;
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+}
+
+const player = new Entity(canvas.width/2, canvas.height/2, 18, '#4caf50');
+player.speed = 3.2;
+player.hp = 3;
+
+const killer = new Entity(100, 100, 22, '#e53935');
+killer.speed = 2.6;
+
+const gens = [
+  { x: 150, y: 150, r: 28, progress: 0, done: false },
+  { x: canvas.width - 150, y: 180, r: 28, progress: 0, done: false },
+  { x: canvas.width/2, y: canvas.height - 150, r: 28, progress: 0, done: false }
+];
+
+const exit = { x: canvas.width - 80, y: canvas.height - 80, r: 40, open: false };
+
+let gameOver = false;
+let win = false;
+let last = 0;
+
+function dist(a, b) {
+  return Math.hypot(a.x - b.x, a.y - b.y);
+}
+
+function showMsg(text) {
+  msgEl.textContent = text;
+  msgEl.style.display = 'block';
+}
+
+function update(dt) {
+  if (gameOver) return;
+
+  let dx = 0, dy = 0;
+  if (keys['w'] || keys['arrowup'] || touch.up) dy -= 1;
+  if (keys['s'] || keys['arrowdown'] || touch.down) dy += 1;
+  if (keys['a'] || keys['arrowleft'] || touch.left) dx -= 1;
+  if (keys['d'] || keys['arrowright'] || touch.right) dx += 1;
+  if (dx && dy) { dx *= 0.707; dy *= 0.707; }
+  player.x += dx * player.speed * dt;
+  player.y += dy * player.speed * dt;
+  player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
+  player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+
+  // Killer AI
+  const toP = dist(killer, player);
+  if (toP > 30) {
+    killer.x += (player.x - killer.x) / toP * killer.speed * dt;
+    killer.y += (player.y - killer.y) / toP * killer.speed * dt;
+  }
+
+  if (dist(player, killer) < player.r + killer.r - 5) {
+    player.hp--;
+    hudHp.textContent = player.hp;
+    player.x += (player.x - killer.x) * 2;
+    player.y += (player.y - killer.y) * 2;
+    if (player.hp <= 0) {
+      gameOver = true;
+      showMsg('Ты пойман... Киллер победил');
+    }
+  }
+
+  // Generators
+  let repaired = 0;
+  gens.forEach(g => {
+    if (g.done) { repaired++; return; }
+    if (dist(player, g) < g.r + 30 && (keys['e'] || touch.e)) {
+      g.progress += 0.008 * dt;
+      if (g.progress >= 1) {
+        g.done = true;
+        g.progress = 1;
+      }
+    }
+    if (g.done) repaired++;
+  });
+  hudGens.textContent = repaired;
+  if (repaired === 3) exit.open = true;
+
+  // Exit
+  if (exit.open && dist(player, exit) < exit.r + player.r) {
+    win = true;
+    gameOver = true;
+    showMsg('Ты сбежал! Победа');
+  }
+}
+
+function draw() {
+  ctx.fillStyle = '#0d0d0d';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Grid
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.lineWidth = 1;
+  for (let x = 0; x < canvas.width; x += 60) {
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+  }
+  for (let y = 0; y < canvas.height; y += 60) {
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+  }
+
+  // Exit
+  ctx.beginPath();
+  ctx.arc(exit.x, exit.y, exit.r, 0, Math.PI*2);
+  ctx.fillStyle = exit.open ? '#2196f3' : '#333';
+  ctx.fill();
+  ctx.strokeStyle = '#fff';
+  ctx.stroke();
+  ctx.fillStyle = '#fff';
+  ctx.font = '14px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText(exit.open ? 'ВЫХОД' : 'ЗАКРЫТ', exit.x, exit.y + 5);
+
+  // Gens
+  gens.forEach(g => {
+    ctx.beginPath();
+    ctx.arc(g.x, g.y, g.r, 0, Math.PI*2);
+    ctx.fillStyle = g.done ? '#4caf50' : '#ff9800';
+    ctx.fill();
+    ctx.strokeStyle = '#000';
+    ctx.stroke();
+    if (!g.done) {
+      ctx.fillStyle = '#000';
+      ctx.fillRect(g.x - 20, g.y - 35, 40, 6);
+      ctx.fillStyle = '#fff';
+      ctx.fillRect(g.x - 20, g.y - 35, 40 * g.progress, 6);
+    }
+  });
+
+  killer.draw();
+  player.draw();
+
+  // Player name
+  ctx.fillStyle = '#fff';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Выживший', player.x, player.y - 28);
+  ctx.fillText('Киллер', killer.x, killer.y - 32);
+}
+
+function loop(t) {
+  const dt = Math.min(32, t - last) / 16;
+  last = t;
+  update(dt);
+  draw();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
