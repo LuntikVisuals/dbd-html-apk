@@ -6,51 +6,51 @@
 <title>Escape the Entity</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-body { background:#050505; color:#fff; font-family:system-ui,sans-serif; overflow:hidden; touch-action:none; height:100dvh; }
+html, body { background:#050505; color:#fff; font-family:system-ui,sans-serif; overflow:hidden; touch-action:none; height:100dvh; width:100vw; }
 #screen { position:relative; width:100vw; height:100dvh; }
 canvas { display:block; width:100%; height:100%; }
 #lobby {
   position:absolute; inset:0; background:linear-gradient(160deg,#0a0a12,#1a0a1a);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:20px;
   z-index:10;
 }
-#lobby h1 { font-size:42px; letter-spacing:4px; text-shadow:0 0 20px #f00; color:#ff4444; }
-#lobby p { opacity:0.7; font-size:14px; }
-.chars { display:flex; gap:16px; }
+#lobby h1 { font-size:48px; letter-spacing:6px; text-shadow:0 0 24px #f00; color:#ff4444; }
+#lobby p { opacity:0.75; font-size:16px; }
+.chars { display:flex; gap:20px; }
 .char {
-  width:90px; height:110px; border:2px solid #333; border-radius:12px; background:#111;
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  width:100px; height:130px; border:2px solid #333; border-radius:14px; background:#111;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
   cursor:pointer; transition:0.2s;
 }
-.char.selected { border-color:#4caf50; box-shadow:0 0 15px #4caf50; }
-.char-preview { width:50px; height:50px; border-radius:50%; }
+.char.selected { border-color:#4caf50; box-shadow:0 0 18px #4caf50; }
+.char-preview { width:60px; height:60px; border-radius:8px; position:relative; }
 #startBtn {
-  padding:16px 48px; font-size:20px; background:#e53935; border:none; border-radius:8px;
+  padding:18px 56px; font-size:22px; background:#e53935; border:none; border-radius:10px;
   color:#fff; font-weight:bold; letter-spacing:2px;
 }
 #hud {
-  position:absolute; top:12px; left:12px; font-size:15px; text-shadow:0 1px 3px #000;
+  position:absolute; top:14px; left:16px; font-size:16px; text-shadow:0 1px 4px #000;
   pointer-events:none; z-index:5;
 }
 #joystick {
-  position:absolute; bottom:30px; left:30px; width:120px; height:120px;
-  background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.2); border-radius:50%;
+  position:absolute; bottom:28px; left:28px; width:130px; height:130px;
+  background:rgba(255,255,255,0.07); border:2px solid rgba(255,255,255,0.18); border-radius:50%;
   z-index:5; touch-action:none;
 }
 #stick {
-  position:absolute; width:50px; height:50px; background:rgba(255,255,255,0.4);
-  border-radius:50%; top:35px; left:35px; pointer-events:none;
+  position:absolute; width:54px; height:54px; background:rgba(255,255,255,0.45);
+  border-radius:50%; top:38px; left:38px; pointer-events:none;
 }
 #interact {
-  position:absolute; bottom:40px; right:40px; width:80px; height:80px;
-  background:rgba(255,152,0,0.3); border:3px solid #ff9800; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px;
+  position:absolute; bottom:36px; right:36px; width:88px; height:88px;
+  background:rgba(255,152,0,0.28); border:3px solid #ff9800; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px;
   z-index:5; touch-action:none;
 }
-#interact.active { background:rgba(255,152,0,0.6); }
+#interact.active { background:rgba(255,152,0,0.65); }
 #msg {
-  position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
-  font-size:28px; text-align:center; text-shadow:0 0 10px #000; display:none; z-index:6;
+  position:absolute; top:42%; left:50%; transform:translate(-50%,-50%);
+  font-size:32px; text-align:center; text-shadow:0 0 12px #000; display:none; z-index:6;
   pointer-events:none;
 }
 </style>
@@ -92,12 +92,13 @@ function resize() {
 }
 resize();
 window.addEventListener('resize', resize);
+window.addEventListener('orientationchange', () => setTimeout(resize, 100));
 
-const WORLD = { w: 1800, h: 1800 };
+const WORLD = { w: 2000, h: 1400 };
 const characters = [
-  { name: 'Alex', color: '#4caf50', speed: 3.4 },
-  { name: 'Maya', color: '#2196f3', speed: 3.1 },
-  { name: 'Leo', color: '#ff9800', speed: 3.6 }
+  { name: 'Alex', color: '#4caf50', speed: 3.5 },
+  { name: 'Maya', color: '#2196f3', speed: 3.2 },
+  { name: 'Leo', color: '#ff9800', speed: 3.7 }
 ];
 let selectedChar = 0;
 
@@ -117,41 +118,39 @@ let gameStarted = false;
 let gameOver = false;
 let win = false;
 
-const player = { x: WORLD.w/2, y: WORLD.h/2, r: 16, hp: 3, vx:0, vy:0 };
-const killer = { x: 200, y: 200, r: 20, speed: 2.4, color: '#e53935' };
+const player = { x: WORLD.w/2, y: WORLD.h/2, r: 18, hp: 3, vx:0, vy:0, angle: 0 };
+const killer = { x: 250, y: 250, r: 22, speed: 2.5, color: '#c62828', angle: 0 };
 
 const gens = [
-  { x: 300, y: 300, r: 30, progress: 0, done: false },
-  { x: 1400, y: 400, r: 30, progress: 0, done: false },
-  { x: 500, y: 1400, r: 30, progress: 0, done: false },
-  { x: 1300, y: 1300, r: 30, progress: 0, done: false }
+  { x: 350, y: 280, r: 32, progress: 0, done: false },
+  { x: 1550, y: 320, r: 32, progress: 0, done: false },
+  { x: 450, y: 1050, r: 32, progress: 0, done: false },
+  { x: 1450, y: 1000, r: 32, progress: 0, done: false }
 ];
 
 const walls = [
-  { x: 400, y: 600, w: 200, h: 40 },
-  { x: 900, y: 300, w: 40, h: 250 },
-  { x: 700, y: 1000, w: 300, h: 50 },
-  { x: 1100, y: 800, w: 50, h: 200 }
+  { x: 500, y: 500, w: 220, h: 36 },
+  { x: 1000, y: 250, w: 36, h: 280 },
+  { x: 750, y: 850, w: 340, h: 44 },
+  { x: 1200, y: 650, w: 44, h: 220 }
 ];
 
 const trees = [];
-for (let i=0; i<18; i++) {
+for (let i=0; i<22; i++) {
   trees.push({
-    x: 100 + Math.random()*(WORLD.w-200),
-    y: 100 + Math.random()*(WORLD.h-200),
-    r: 25 + Math.random()*20
+    x: 120 + Math.random()*(WORLD.w-240),
+    y: 120 + Math.random()*(WORLD.h-240),
+    r: 22 + Math.random()*18
   });
 }
 
-const exit = { x: WORLD.w - 120, y: WORLD.h - 120, r: 50, open: false };
+const exit = { x: WORLD.w - 140, y: WORLD.h - 140, r: 55, open: false };
 
 let camera = { x: 0, y: 0 };
 let joystickActive = false;
 let joyX = 0, joyY = 0;
 let interacting = false;
 
-// Joystick
-let joyCenter = { x: 60, y: 60 };
 joystick.addEventListener('touchstart', e => {
   e.preventDefault();
   joystickActive = true;
@@ -174,7 +173,7 @@ function updateJoy(t) {
   let dx = t.clientX - cx;
   let dy = t.clientY - cy;
   const dist = Math.hypot(dx, dy);
-  const max = 40;
+  const max = 42;
   if (dist > max) {
     dx = dx / dist * max;
     dy = dy / dist * max;
@@ -202,7 +201,7 @@ function collidesWall(x, y, r) {
     if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) return true;
   }
   for (const t of trees) {
-    if (dist({x,y}, t) < r + t.r - 5) return true;
+    if (dist({x,y}, t) < r + t.r - 6) return true;
   }
   return false;
 }
@@ -212,15 +211,68 @@ function showMsg(text) {
   msgEl.style.display = 'block';
 }
 
+function drawCharacter(x, y, color, angle, isKiller) {
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.rotate(angle);
+
+  // Shadow
+  ctx.fillStyle = 'rgba(0,0,0,0.35)';
+  ctx.beginPath();
+  ctx.ellipse(0, 12, 14, 6, 0, 0, Math.PI*2);
+  ctx.fill();
+
+  // Body
+  ctx.fillStyle = color;
+  ctx.beginPath();
+  ctx.ellipse(0, 2, 12, 16, 0, 0, Math.PI*2);
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+
+  // Head
+  ctx.fillStyle = isKiller ? '#ffcdd2' : '#ffe0b2';
+  ctx.beginPath();
+  ctx.arc(0, -14, 9, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+
+  // Eyes
+  ctx.fillStyle = '#000';
+  ctx.beginPath(); ctx.arc(-3, -15, 1.8, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(3, -15, 1.8, 0, Math.PI*2); ctx.fill();
+
+  if (isKiller) {
+    // Mask-like eyes
+    ctx.fillStyle = '#fff';
+    ctx.beginPath(); ctx.arc(-3, -15, 1.2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(3, -15, 1.2, 0, Math.PI*2); ctx.fill();
+  }
+
+  // Arms
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 4;
+  ctx.lineCap = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-10, -2);
+  ctx.lineTo(-16, 6);
+  ctx.moveTo(10, -2);
+  ctx.lineTo(16, 6);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
 function update(dt) {
   if (!gameStarted || gameOver) return;
 
-  // Movement
   let dx = joyX;
   let dy = joyY;
   const len = Math.hypot(dx, dy);
   if (len > 0.1) {
     dx /= len; dy /= len;
+    player.angle = Math.atan2(dy, dx);
     const nx = player.x + dx * player.speed * dt;
     const ny = player.y + dy * player.speed * dt;
     if (!collidesWall(nx, player.y, player.r)) player.x = nx;
@@ -229,24 +281,23 @@ function update(dt) {
     player.y = Math.max(player.r, Math.min(WORLD.h - player.r, player.y));
   }
 
-  // Killer AI
   const toP = dist(killer, player);
-  if (toP > 40) {
+  if (toP > 45) {
     const kdx = (player.x - killer.x) / toP;
     const kdy = (player.y - killer.y) / toP;
+    killer.angle = Math.atan2(kdy, kdx);
     const knx = killer.x + kdx * killer.speed * dt;
     const kny = killer.y + kdy * killer.speed * dt;
     if (!collidesWall(knx, killer.y, killer.r)) killer.x = knx;
     if (!collidesWall(killer.x, kny, killer.r)) killer.y = kny;
   }
 
-  if (dist(player, killer) < player.r + killer.r - 4) {
+  if (dist(player, killer) < player.r + killer.r - 6) {
     player.hp--;
     hudHp.textContent = player.hp;
-    // Knockback
-    const kb = 80;
-    const kdx = (player.x - killer.x) / toP;
-    const kdy = (player.y - killer.y) / toP;
+    const kb = 90;
+    const kdx = (player.x - killer.x) / Math.max(1, toP);
+    const kdy = (player.y - killer.y) / Math.max(1, toP);
     player.x += kdx * kb;
     player.y += kdy * kb;
     if (player.hp <= 0) {
@@ -255,12 +306,11 @@ function update(dt) {
     }
   }
 
-  // Gens
   let doneCount = 0;
   gens.forEach(g => {
     if (g.done) { doneCount++; return; }
-    if (dist(player, g) < g.r + 40 && interacting) {
-      g.progress += 0.006 * dt;
+    if (dist(player, g) < g.r + 42 && interacting) {
+      g.progress += 0.0055 * dt;
       if (g.progress >= 1) { g.done = true; g.progress = 1; }
     }
     if (g.done) doneCount++;
@@ -274,7 +324,6 @@ function update(dt) {
     showMsg('Сбежал!');
   }
 
-  // Camera
   camera.x = player.x - canvas.width/2;
   camera.y = player.y - canvas.height/2;
   camera.x = Math.max(0, Math.min(WORLD.w - canvas.width, camera.x));
@@ -290,85 +339,57 @@ function draw() {
   ctx.save();
   ctx.translate(-camera.x, -camera.y);
 
-  // Ground
-  ctx.fillStyle = '#151515';
+  ctx.fillStyle = '#121212';
   ctx.fillRect(0, 0, WORLD.w, WORLD.h);
 
-  // Trees
   trees.forEach(t => {
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
-    ctx.fillStyle = '#1b3a1b';
+    ctx.fillStyle = '#1a3a1a';
     ctx.fill();
     ctx.beginPath();
-    ctx.arc(t.x, t.y - 5, t.r * 0.6, 0, Math.PI*2);
-    ctx.fillStyle = '#2e5a2e';
+    ctx.arc(t.x, t.y - 6, t.r * 0.55, 0, Math.PI*2);
+    ctx.fillStyle = '#2a5a2a';
     ctx.fill();
   });
 
-  // Walls
   walls.forEach(w => {
-    ctx.fillStyle = '#2a2a2a';
+    ctx.fillStyle = '#2c2c2c';
     ctx.fillRect(w.x, w.y, w.w, w.h);
-    ctx.strokeStyle = '#444';
+    ctx.strokeStyle = '#555';
     ctx.strokeRect(w.x, w.y, w.w, w.h);
   });
 
-  // Exit
   ctx.beginPath();
   ctx.arc(exit.x, exit.y, exit.r, 0, Math.PI*2);
-  ctx.fillStyle = exit.open ? '#1565c0' : '#222';
+  ctx.fillStyle = exit.open ? '#0d47a1' : '#1a1a1a';
   ctx.fill();
-  ctx.strokeStyle = exit.open ? '#42a5f5' : '#555';
+  ctx.strokeStyle = exit.open ? '#42a5f5' : '#444';
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.fillStyle = '#fff';
-  ctx.font = '16px sans-serif';
+  ctx.font = '15px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(exit.open ? 'ВЫХОД' : 'ЗАКРЫТ', exit.x, exit.y + 6);
+  ctx.fillText(exit.open ? 'ВЫХОД' : 'ЗАКРЫТ', exit.x, exit.y + 5);
 
-  // Generators
   gens.forEach(g => {
     ctx.beginPath();
     ctx.arc(g.x, g.y, g.r, 0, Math.PI*2);
-    ctx.fillStyle = g.done ? '#388e3c' : '#ef6c00';
+    ctx.fillStyle = g.done ? '#2e7d32' : '#e65100';
     ctx.fill();
     ctx.strokeStyle = '#000';
     ctx.lineWidth = 2;
     ctx.stroke();
     if (!g.done) {
       ctx.fillStyle = '#000';
-      ctx.fillRect(g.x - 22, g.y - 40, 44, 7);
+      ctx.fillRect(g.x - 24, g.y - 42, 48, 8);
       ctx.fillStyle = '#fff';
-      ctx.fillRect(g.x - 22, g.y - 40, 44 * g.progress, 7);
+      ctx.fillRect(g.x - 24, g.y - 42, 48 * g.progress, 8);
     }
   });
 
-  // Killer
-  ctx.beginPath();
-  ctx.arc(killer.x, killer.y, killer.r, 0, Math.PI*2);
-  ctx.fillStyle = killer.color;
-  ctx.fill();
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  // Eyes
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(killer.x-6, killer.y-4, 3, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(killer.x+6, killer.y-4, 3, 0, Math.PI*2); ctx.fill();
-
-  // Player
-  ctx.beginPath();
-  ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
-  ctx.fillStyle = player.color || '#4caf50';
-  ctx.fill();
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 2;
-  ctx.stroke();
-  // Simple face
-  ctx.fillStyle = '#fff';
-  ctx.beginPath(); ctx.arc(player.x-5, player.y-3, 2.5, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(player.x+5, player.y-3, 2.5, 0, Math.PI*2); ctx.fill();
+  drawCharacter(killer.x, killer.y, killer.color, killer.angle, true);
+  drawCharacter(player.x, player.y, player.color || '#4caf50', player.angle, false);
 
   ctx.restore();
 }
