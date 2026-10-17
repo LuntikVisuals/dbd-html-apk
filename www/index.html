@@ -2,94 +2,89 @@
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>DBD HTML</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Escape the Entity</title>
 <style>
-* { margin: 0; padding: 0; box-sizing: border-box; }
-body {
-  background: #0a0a0a;
-  color: #eee;
-  font-family: 'Segoe UI', system-ui, sans-serif;
-  overflow: hidden;
-  touch-action: none;
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { background:#050505; color:#fff; font-family:system-ui,sans-serif; overflow:hidden; touch-action:none; height:100dvh; }
+#screen { position:relative; width:100vw; height:100dvh; }
+canvas { display:block; width:100%; height:100%; }
+#lobby {
+  position:absolute; inset:0; background:linear-gradient(160deg,#0a0a12,#1a0a1a);
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:24px;
+  z-index:10;
 }
-#game {
-  display: block;
-  width: 100vw;
-  height: 100vh;
-  background: #111;
-  cursor: crosshair;
+#lobby h1 { font-size:42px; letter-spacing:4px; text-shadow:0 0 20px #f00; color:#ff4444; }
+#lobby p { opacity:0.7; font-size:14px; }
+.chars { display:flex; gap:16px; }
+.char {
+  width:90px; height:110px; border:2px solid #333; border-radius:12px; background:#111;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+  cursor:pointer; transition:0.2s;
+}
+.char.selected { border-color:#4caf50; box-shadow:0 0 15px #4caf50; }
+.char-preview { width:50px; height:50px; border-radius:50%; }
+#startBtn {
+  padding:16px 48px; font-size:20px; background:#e53935; border:none; border-radius:8px;
+  color:#fff; font-weight:bold; letter-spacing:2px;
 }
 #hud {
-  position: absolute;
-  top: 10px;
-  left: 10px;
-  font-size: 14px;
-  text-shadow: 1px 1px 2px #000;
-  pointer-events: none;
+  position:absolute; top:12px; left:12px; font-size:15px; text-shadow:0 1px 3px #000;
+  pointer-events:none; z-index:5;
 }
-#controls {
-  position: absolute;
-  bottom: 20px;
-  right: 20px;
-  display: none;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
+#joystick {
+  position:absolute; bottom:30px; left:30px; width:120px; height:120px;
+  background:rgba(255,255,255,0.08); border:2px solid rgba(255,255,255,0.2); border-radius:50%;
+  z-index:5; touch-action:none;
 }
-@media (pointer: coarse) {
-  #controls { display: flex; }
+#stick {
+  position:absolute; width:50px; height:50px; background:rgba(255,255,255,0.4);
+  border-radius:50%; top:35px; left:35px; pointer-events:none;
 }
-.btn {
-  width: 70px;
-  height: 70px;
-  background: rgba(255,255,255,0.15);
-  border: 2px solid #555;
-  border-radius: 12px;
-  color: #fff;
-  font-size: 18px;
-  font-weight: bold;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  touch-action: none;
+#interact {
+  position:absolute; bottom:40px; right:40px; width:80px; height:80px;
+  background:rgba(255,152,0,0.3); border:3px solid #ff9800; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:13px;
+  z-index:5; touch-action:none;
 }
-.btn:active { background: rgba(255,255,255,0.3); }
+#interact.active { background:rgba(255,152,0,0.6); }
 #msg {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 32px;
-  text-align: center;
-  display: none;
-  text-shadow: 0 0 10px #000;
-  pointer-events: none;
+  position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
+  font-size:28px; text-align:center; text-shadow:0 0 10px #000; display:none; z-index:6;
+  pointer-events:none;
 }
 </style>
 </head>
 <body>
-<canvas id="game"></canvas>
-<div id="hud">
-  Генераторы: <span id="gens">0</span>/3<br>
-  Здоровье: <span id="hp">3</span>
-</div>
-<div id="msg"></div>
-<div id="controls">
-  <div class="btn" id="btn-up">↑</div>
-  <div class="btn" id="btn-left">←</div>
-  <div class="btn" id="btn-down">↓</div>
-  <div class="btn" id="btn-right">→</div>
-  <div class="btn" id="btn-e" style="width:90px">Ремонт</div>
+<div id="screen">
+  <canvas id="game"></canvas>
+  <div id="lobby">
+    <h1>ESCAPE</h1>
+    <p>Выживи. Почини генераторы. Сбеги.</p>
+    <div class="chars" id="chars"></div>
+    <button id="startBtn">НАЧАТЬ ИГРУ</button>
+  </div>
+  <div id="hud">
+    Генераторы: <span id="gens">0</span>/4<br>
+    Здоровье: <span id="hp">3</span>
+  </div>
+  <div id="msg"></div>
+  <div id="joystick"><div id="stick"></div></div>
+  <div id="interact">РЕМОНТ</div>
 </div>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+const lobby = document.getElementById('lobby');
+const startBtn = document.getElementById('startBtn');
+const charsDiv = document.getElementById('chars');
 const hudGens = document.getElementById('gens');
 const hudHp = document.getElementById('hp');
 const msgEl = document.getElementById('msg');
+const joystick = document.getElementById('joystick');
+const stick = document.getElementById('stick');
+const interactBtn = document.getElementById('interact');
 
 function resize() {
   canvas.width = window.innerWidth;
@@ -98,64 +93,118 @@ function resize() {
 resize();
 window.addEventListener('resize', resize);
 
-const keys = {};
-const touch = { up: false, down: false, left: false, right: false, e: false };
-
-window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
-window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
-
-function bindBtn(id, dir) {
-  const el = document.getElementById(id);
-  const start = (e) => { e.preventDefault(); touch[dir] = true; };
-  const end = (e) => { e.preventDefault(); touch[dir] = false; };
-  el.addEventListener('touchstart', start);
-  el.addEventListener('touchend', end);
-  el.addEventListener('mousedown', start);
-  el.addEventListener('mouseup', end);
-  el.addEventListener('mouseleave', end);
-}
-bindBtn('btn-up', 'up');
-bindBtn('btn-down', 'down');
-bindBtn('btn-left', 'left');
-bindBtn('btn-right', 'right');
-bindBtn('btn-e', 'e');
-
-class Entity {
-  constructor(x, y, r, color) {
-    this.x = x; this.y = y; this.r = r; this.color = color;
-  }
-  draw() {
-    ctx.beginPath();
-    ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
-    ctx.fillStyle = this.color;
-    ctx.fill();
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
-}
-
-const player = new Entity(canvas.width/2, canvas.height/2, 18, '#4caf50');
-player.speed = 3.2;
-player.hp = 3;
-
-const killer = new Entity(100, 100, 22, '#e53935');
-killer.speed = 2.6;
-
-const gens = [
-  { x: 150, y: 150, r: 28, progress: 0, done: false },
-  { x: canvas.width - 150, y: 180, r: 28, progress: 0, done: false },
-  { x: canvas.width/2, y: canvas.height - 150, r: 28, progress: 0, done: false }
+const WORLD = { w: 1800, h: 1800 };
+const characters = [
+  { name: 'Alex', color: '#4caf50', speed: 3.4 },
+  { name: 'Maya', color: '#2196f3', speed: 3.1 },
+  { name: 'Leo', color: '#ff9800', speed: 3.6 }
 ];
+let selectedChar = 0;
 
-const exit = { x: canvas.width - 80, y: canvas.height - 80, r: 40, open: false };
+characters.forEach((c, i) => {
+  const div = document.createElement('div');
+  div.className = 'char' + (i===0?' selected':'');
+  div.innerHTML = `<div class="char-preview" style="background:${c.color}"></div><div>${c.name}</div>`;
+  div.onclick = () => {
+    document.querySelectorAll('.char').forEach(el => el.classList.remove('selected'));
+    div.classList.add('selected');
+    selectedChar = i;
+  };
+  charsDiv.appendChild(div);
+});
 
+let gameStarted = false;
 let gameOver = false;
 let win = false;
-let last = 0;
 
-function dist(a, b) {
-  return Math.hypot(a.x - b.x, a.y - b.y);
+const player = { x: WORLD.w/2, y: WORLD.h/2, r: 16, hp: 3, vx:0, vy:0 };
+const killer = { x: 200, y: 200, r: 20, speed: 2.4, color: '#e53935' };
+
+const gens = [
+  { x: 300, y: 300, r: 30, progress: 0, done: false },
+  { x: 1400, y: 400, r: 30, progress: 0, done: false },
+  { x: 500, y: 1400, r: 30, progress: 0, done: false },
+  { x: 1300, y: 1300, r: 30, progress: 0, done: false }
+];
+
+const walls = [
+  { x: 400, y: 600, w: 200, h: 40 },
+  { x: 900, y: 300, w: 40, h: 250 },
+  { x: 700, y: 1000, w: 300, h: 50 },
+  { x: 1100, y: 800, w: 50, h: 200 }
+];
+
+const trees = [];
+for (let i=0; i<18; i++) {
+  trees.push({
+    x: 100 + Math.random()*(WORLD.w-200),
+    y: 100 + Math.random()*(WORLD.h-200),
+    r: 25 + Math.random()*20
+  });
+}
+
+const exit = { x: WORLD.w - 120, y: WORLD.h - 120, r: 50, open: false };
+
+let camera = { x: 0, y: 0 };
+let joystickActive = false;
+let joyX = 0, joyY = 0;
+let interacting = false;
+
+// Joystick
+let joyCenter = { x: 60, y: 60 };
+joystick.addEventListener('touchstart', e => {
+  e.preventDefault();
+  joystickActive = true;
+  updateJoy(e.touches[0]);
+}, {passive:false});
+joystick.addEventListener('touchmove', e => {
+  e.preventDefault();
+  if (joystickActive) updateJoy(e.touches[0]);
+}, {passive:false});
+joystick.addEventListener('touchend', e => {
+  joystickActive = false;
+  joyX = joyY = 0;
+  stick.style.transform = 'translate(0,0)';
+});
+
+function updateJoy(t) {
+  const rect = joystick.getBoundingClientRect();
+  const cx = rect.left + rect.width/2;
+  const cy = rect.top + rect.height/2;
+  let dx = t.clientX - cx;
+  let dy = t.clientY - cy;
+  const dist = Math.hypot(dx, dy);
+  const max = 40;
+  if (dist > max) {
+    dx = dx / dist * max;
+    dy = dy / dist * max;
+  }
+  joyX = dx / max;
+  joyY = dy / max;
+  stick.style.transform = `translate(${dx}px, ${dy}px)`;
+}
+
+interactBtn.addEventListener('touchstart', e => { e.preventDefault(); interacting = true; interactBtn.classList.add('active'); });
+interactBtn.addEventListener('touchend', e => { interacting = false; interactBtn.classList.remove('active'); });
+
+startBtn.onclick = () => {
+  const ch = characters[selectedChar];
+  player.speed = ch.speed;
+  player.color = ch.color;
+  lobby.style.display = 'none';
+  gameStarted = true;
+};
+
+function dist(a,b) { return Math.hypot(a.x-b.x, a.y-b.y); }
+
+function collidesWall(x, y, r) {
+  for (const w of walls) {
+    if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) return true;
+  }
+  for (const t of trees) {
+    if (dist({x,y}, t) < r + t.r - 5) return true;
+  }
+  return false;
 }
 
 function showMsg(text) {
@@ -164,116 +213,169 @@ function showMsg(text) {
 }
 
 function update(dt) {
-  if (gameOver) return;
+  if (!gameStarted || gameOver) return;
 
-  let dx = 0, dy = 0;
-  if (keys['w'] || keys['arrowup'] || touch.up) dy -= 1;
-  if (keys['s'] || keys['arrowdown'] || touch.down) dy += 1;
-  if (keys['a'] || keys['arrowleft'] || touch.left) dx -= 1;
-  if (keys['d'] || keys['arrowright'] || touch.right) dx += 1;
-  if (dx && dy) { dx *= 0.707; dy *= 0.707; }
-  player.x += dx * player.speed * dt;
-  player.y += dy * player.speed * dt;
-  player.x = Math.max(player.r, Math.min(canvas.width - player.r, player.x));
-  player.y = Math.max(player.r, Math.min(canvas.height - player.r, player.y));
+  // Movement
+  let dx = joyX;
+  let dy = joyY;
+  const len = Math.hypot(dx, dy);
+  if (len > 0.1) {
+    dx /= len; dy /= len;
+    const nx = player.x + dx * player.speed * dt;
+    const ny = player.y + dy * player.speed * dt;
+    if (!collidesWall(nx, player.y, player.r)) player.x = nx;
+    if (!collidesWall(player.x, ny, player.r)) player.y = ny;
+    player.x = Math.max(player.r, Math.min(WORLD.w - player.r, player.x));
+    player.y = Math.max(player.r, Math.min(WORLD.h - player.r, player.y));
+  }
 
   // Killer AI
   const toP = dist(killer, player);
-  if (toP > 30) {
-    killer.x += (player.x - killer.x) / toP * killer.speed * dt;
-    killer.y += (player.y - killer.y) / toP * killer.speed * dt;
+  if (toP > 40) {
+    const kdx = (player.x - killer.x) / toP;
+    const kdy = (player.y - killer.y) / toP;
+    const knx = killer.x + kdx * killer.speed * dt;
+    const kny = killer.y + kdy * killer.speed * dt;
+    if (!collidesWall(knx, killer.y, killer.r)) killer.x = knx;
+    if (!collidesWall(killer.x, kny, killer.r)) killer.y = kny;
   }
 
-  if (dist(player, killer) < player.r + killer.r - 5) {
+  if (dist(player, killer) < player.r + killer.r - 4) {
     player.hp--;
     hudHp.textContent = player.hp;
-    player.x += (player.x - killer.x) * 2;
-    player.y += (player.y - killer.y) * 2;
+    // Knockback
+    const kb = 80;
+    const kdx = (player.x - killer.x) / toP;
+    const kdy = (player.y - killer.y) / toP;
+    player.x += kdx * kb;
+    player.y += kdy * kb;
     if (player.hp <= 0) {
       gameOver = true;
-      showMsg('Ты пойман... Киллер победил');
+      showMsg('Пойман...');
     }
   }
 
-  // Generators
-  let repaired = 0;
+  // Gens
+  let doneCount = 0;
   gens.forEach(g => {
-    if (g.done) { repaired++; return; }
-    if (dist(player, g) < g.r + 30 && (keys['e'] || touch.e)) {
-      g.progress += 0.008 * dt;
-      if (g.progress >= 1) {
-        g.done = true;
-        g.progress = 1;
-      }
+    if (g.done) { doneCount++; return; }
+    if (dist(player, g) < g.r + 40 && interacting) {
+      g.progress += 0.006 * dt;
+      if (g.progress >= 1) { g.done = true; g.progress = 1; }
     }
-    if (g.done) repaired++;
+    if (g.done) doneCount++;
   });
-  hudGens.textContent = repaired;
-  if (repaired === 3) exit.open = true;
+  hudGens.textContent = doneCount;
+  if (doneCount >= 4) exit.open = true;
 
-  // Exit
   if (exit.open && dist(player, exit) < exit.r + player.r) {
     win = true;
     gameOver = true;
-    showMsg('Ты сбежал! Победа');
+    showMsg('Сбежал!');
   }
+
+  // Camera
+  camera.x = player.x - canvas.width/2;
+  camera.y = player.y - canvas.height/2;
+  camera.x = Math.max(0, Math.min(WORLD.w - canvas.width, camera.x));
+  camera.y = Math.max(0, Math.min(WORLD.h - canvas.height, camera.y));
 }
 
 function draw() {
-  ctx.fillStyle = '#0d0d0d';
+  ctx.fillStyle = '#0a0a0a';
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Grid
-  ctx.strokeStyle = '#1a1a1a';
-  ctx.lineWidth = 1;
-  for (let x = 0; x < canvas.width; x += 60) {
-    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-  }
-  for (let y = 0; y < canvas.height; y += 60) {
-    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-  }
+  if (!gameStarted) return;
+
+  ctx.save();
+  ctx.translate(-camera.x, -camera.y);
+
+  // Ground
+  ctx.fillStyle = '#151515';
+  ctx.fillRect(0, 0, WORLD.w, WORLD.h);
+
+  // Trees
+  trees.forEach(t => {
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
+    ctx.fillStyle = '#1b3a1b';
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(t.x, t.y - 5, t.r * 0.6, 0, Math.PI*2);
+    ctx.fillStyle = '#2e5a2e';
+    ctx.fill();
+  });
+
+  // Walls
+  walls.forEach(w => {
+    ctx.fillStyle = '#2a2a2a';
+    ctx.fillRect(w.x, w.y, w.w, w.h);
+    ctx.strokeStyle = '#444';
+    ctx.strokeRect(w.x, w.y, w.w, w.h);
+  });
 
   // Exit
   ctx.beginPath();
   ctx.arc(exit.x, exit.y, exit.r, 0, Math.PI*2);
-  ctx.fillStyle = exit.open ? '#2196f3' : '#333';
+  ctx.fillStyle = exit.open ? '#1565c0' : '#222';
   ctx.fill();
-  ctx.strokeStyle = '#fff';
+  ctx.strokeStyle = exit.open ? '#42a5f5' : '#555';
+  ctx.lineWidth = 3;
   ctx.stroke();
   ctx.fillStyle = '#fff';
-  ctx.font = '14px sans-serif';
+  ctx.font = '16px sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText(exit.open ? 'ВЫХОД' : 'ЗАКРЫТ', exit.x, exit.y + 5);
+  ctx.fillText(exit.open ? 'ВЫХОД' : 'ЗАКРЫТ', exit.x, exit.y + 6);
 
-  // Gens
+  // Generators
   gens.forEach(g => {
     ctx.beginPath();
     ctx.arc(g.x, g.y, g.r, 0, Math.PI*2);
-    ctx.fillStyle = g.done ? '#4caf50' : '#ff9800';
+    ctx.fillStyle = g.done ? '#388e3c' : '#ef6c00';
     ctx.fill();
     ctx.strokeStyle = '#000';
+    ctx.lineWidth = 2;
     ctx.stroke();
     if (!g.done) {
       ctx.fillStyle = '#000';
-      ctx.fillRect(g.x - 20, g.y - 35, 40, 6);
+      ctx.fillRect(g.x - 22, g.y - 40, 44, 7);
       ctx.fillStyle = '#fff';
-      ctx.fillRect(g.x - 20, g.y - 35, 40 * g.progress, 6);
+      ctx.fillRect(g.x - 22, g.y - 40, 44 * g.progress, 7);
     }
   });
 
-  killer.draw();
-  player.draw();
-
-  // Player name
+  // Killer
+  ctx.beginPath();
+  ctx.arc(killer.x, killer.y, killer.r, 0, Math.PI*2);
+  ctx.fillStyle = killer.color;
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Eyes
   ctx.fillStyle = '#fff';
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText('Выживший', player.x, player.y - 28);
-  ctx.fillText('Киллер', killer.x, killer.y - 32);
+  ctx.beginPath(); ctx.arc(killer.x-6, killer.y-4, 3, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(killer.x+6, killer.y-4, 3, 0, Math.PI*2); ctx.fill();
+
+  // Player
+  ctx.beginPath();
+  ctx.arc(player.x, player.y, player.r, 0, Math.PI*2);
+  ctx.fillStyle = player.color || '#4caf50';
+  ctx.fill();
+  ctx.strokeStyle = '#000';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+  // Simple face
+  ctx.fillStyle = '#fff';
+  ctx.beginPath(); ctx.arc(player.x-5, player.y-3, 2.5, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(player.x+5, player.y-3, 2.5, 0, Math.PI*2); ctx.fill();
+
+  ctx.restore();
 }
 
+let last = performance.now();
 function loop(t) {
-  const dt = Math.min(32, t - last) / 16;
+  const dt = Math.min(40, t - last) / 16.67;
   last = t;
   update(dt);
   draw();
