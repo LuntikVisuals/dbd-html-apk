@@ -6,84 +6,74 @@
 <title>NIGHT ESCAPE</title>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
-html, body { background:#030308; color:#fff; font-family:system-ui, -apple-system, sans-serif; overflow:hidden; touch-action:none; height:100dvh; width:100vw; }
+html, body { background:#030308; color:#fff; font-family:system-ui,sans-serif; overflow:hidden; touch-action:none; height:100dvh; width:100vw; }
 #screen { position:relative; width:100vw; height:100dvh; }
 canvas { display:block; width:100%; height:100%; }
-#lobby {
+.menu {
   position:absolute; inset:0; background:radial-gradient(ellipse at center, #1a0a18 0%, #050508 70%);
-  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:18px;
-  z-index:10; overflow:hidden;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:22px; z-index:10;
 }
-#lobby::before {
-  content:''; position:absolute; inset:0;
-  background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><circle cx="2" cy="2" r="1" fill="%23ffffff08"/></svg>');
-  opacity:0.4; pointer-events:none;
+.title { font-size:48px; font-weight:900; letter-spacing:6px; background:linear-gradient(180deg,#ff6b6b,#c92a2a); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.menu-btns { display:flex; flex-direction:column; gap:14px; width:280px; }
+.menu-btn {
+  padding:16px; font-size:18px; font-weight:700; letter-spacing:2px; border:none; border-radius:12px;
+  background:#222; color:#fff; transition:0.2s;
 }
-.title {
-  font-size:52px; font-weight:900; letter-spacing:8px; text-transform:uppercase;
-  background:linear-gradient(180deg, #ff6b6b, #c92a2a); -webkit-background-clip:text; -webkit-text-fill-color:transparent;
-  text-shadow:0 0 40px rgba(255,60,60,0.4); animation:pulse 3s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.02)} }
-.subtitle { opacity:0.6; font-size:15px; letter-spacing:3px; text-transform:uppercase; }
-.chars { display:flex; gap:16px; margin:10px 0; }
+.menu-btn:active { transform:scale(0.97); }
+.menu-btn.primary { background:linear-gradient(180deg,#e53935,#b71c1c); }
+.panel { display:none; flex-direction:column; align-items:center; gap:16px; }
+.panel.active { display:flex; }
+.chars { display:flex; gap:14px; flex-wrap:wrap; justify-content:center; max-width:90%; }
 .char {
-  width:110px; height:150px; border:2px solid #333; border-radius:16px; background:linear-gradient(180deg,#111,#0a0a0a);
-  display:flex; flex-direction:column; align-items:center; justify-content:flex-end; padding-bottom:12px; gap:6px;
-  cursor:pointer; transition:all 0.25s; position:relative; overflow:hidden;
+  width:100px; padding:10px; border:2px solid #333; border-radius:12px; background:#111;
+  text-align:center; cursor:pointer; transition:0.2s;
 }
-.char::before {
-  content:''; position:absolute; inset:0; background:radial-gradient(circle at 50% 30%, rgba(255,255,255,0.05), transparent 70%);
-}
-.char.selected { border-color:#4caf50; box-shadow:0 0 24px rgba(76,175,80,0.5); transform:translateY(-4px); }
-.char-preview {
-  width:70px; height:70px; border-radius:12px; margin-bottom:4px; position:relative;
-  animation:float 2.5s ease-in-out infinite;
-}
-@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-.char-name { font-size:14px; font-weight:600; }
-.char-stat { font-size:11px; opacity:0.5; }
-#startBtn {
-  padding:16px 64px; font-size:20px; background:linear-gradient(180deg,#e53935,#b71c1c); border:none; border-radius:12px;
-  color:#fff; font-weight:800; letter-spacing:3px; text-transform:uppercase;
-  box-shadow:0 8px 24px rgba(229,57,53,0.4); transition:0.2s;
-}
-#startBtn:active { transform:scale(0.96); }
-#hud {
-  position:absolute; top:16px; left:18px; font-size:15px; text-shadow:0 1px 4px #000;
-  pointer-events:none; z-index:5; line-height:1.4;
-}
+.char.selected { border-color:#4caf50; box-shadow:0 0 16px #4caf5080; }
+.char-preview { width:60px; height:60px; margin:0 auto 6px; border-radius:8px; }
+#hud { position:absolute; top:14px; left:16px; font-size:15px; text-shadow:0 1px 3px #000; pointer-events:none; z-index:5; }
 #joystick {
-  position:absolute; bottom:32px; left:32px; width:140px; height:140px;
-  background:rgba(255,255,255,0.06); border:2px solid rgba(255,255,255,0.15); border-radius:50%;
-  z-index:5; touch-action:none;
+  position:absolute; bottom:28px; left:28px; width:130px; height:130px;
+  background:rgba(255,255,255,0.07); border:2px solid rgba(255,255,255,0.18); border-radius:50%; z-index:5; touch-action:none;
 }
-#stick {
-  position:absolute; width:58px; height:58px; background:rgba(255,255,255,0.5);
-  border-radius:50%; top:41px; left:41px; pointer-events:none; box-shadow:0 2px 8px rgba(0,0,0,0.4);
-}
+#stick { position:absolute; width:54px; height:54px; background:rgba(255,255,255,0.5); border-radius:50%; top:38px; left:38px; pointer-events:none; }
 #interact {
-  position:absolute; bottom:40px; right:40px; width:92px; height:92px;
-  background:rgba(255,152,0,0.25); border:3px solid #ff9800; border-radius:50%;
-  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:13px; letter-spacing:1px;
-  z-index:5; touch-action:none; transition:0.15s;
+  position:absolute; bottom:34px; right:34px; width:86px; height:86px;
+  background:rgba(255,152,0,0.28); border:3px solid #ff9800; border-radius:50%;
+  display:flex; align-items:center; justify-content:center; font-weight:800; font-size:12px; z-index:5;
 }
-#interact.active { background:rgba(255,152,0,0.7); transform:scale(0.95); }
-#msg {
-  position:absolute; top:40%; left:50%; transform:translate(-50%,-50%);
-  font-size:36px; font-weight:800; text-align:center; text-shadow:0 0 16px #000; display:none; z-index:6;
-  pointer-events:none; letter-spacing:2px;
-}
+#interact.active { background:rgba(255,152,0,0.65); }
+#msg { position:absolute; top:40%; left:50%; transform:translate(-50%,-50%); font-size:32px; font-weight:800; display:none; z-index:6; pointer-events:none; }
+.back { margin-top:10px; padding:10px 24px; background:#333; border:none; border-radius:8px; color:#fff; }
 </style>
 </head>
 <body>
 <div id="screen">
   <canvas id="game"></canvas>
-  <div id="lobby">
+  <div id="mainMenu" class="menu">
     <div class="title">NIGHT ESCAPE</div>
-    <div class="subtitle">Выживи • Почини • Сбеги</div>
-    <div class="chars" id="chars"></div>
-    <button id="startBtn">Начать охоту</button>
+    <div class="menu-btns">
+      <button class="menu-btn primary" id="btnPlay">ИГРАТЬ</button>
+      <button class="menu-btn" id="btnChars">ПЕРСОНАЖИ</button>
+      <button class="menu-btn" id="btnShop">МАГАЗИН</button>
+    </div>
+  </div>
+  <div id="playPanel" class="menu panel">
+    <div class="title" style="font-size:36px">Выбери роль</div>
+    <div class="menu-btns">
+      <button class="menu-btn primary" id="btnSurvivor">ВЫЖИВШИЙ</button>
+      <button class="menu-btn" id="btnKiller">УБИЙЦА</button>
+    </div>
+    <button class="back" id="backFromPlay">Назад</button>
+  </div>
+  <div id="charsPanel" class="menu panel">
+    <div class="title" style="font-size:32px">Персонажи</div>
+    <div class="chars" id="charsList"></div>
+    <button class="back" id="backFromChars">Назад</button>
+  </div>
+  <div id="shopPanel" class="menu panel">
+    <div class="title" style="font-size:32px">Магазин</div>
+    <p style="opacity:0.6">Скоро</p>
+    <button class="back" id="backFromShop">Назад</button>
   </div>
   <div id="hud">
     Генераторы: <span id="gens">0</span>/4<br>
@@ -91,15 +81,17 @@ canvas { display:block; width:100%; height:100%; }
   </div>
   <div id="msg"></div>
   <div id="joystick"><div id="stick"></div></div>
-  <div id="interact">РЕМОНТ</div>
+  <div id="interact">ДЕЙСТВИЕ</div>
 </div>
 
 <script>
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const lobby = document.getElementById('lobby');
-const startBtn = document.getElementById('startBtn');
-const charsDiv = document.getElementById('chars');
+const mainMenu = document.getElementById('mainMenu');
+const playPanel = document.getElementById('playPanel');
+const charsPanel = document.getElementById('charsPanel');
+const shopPanel = document.getElementById('shopPanel');
+const charsList = document.getElementById('charsList');
 const hudGens = document.getElementById('gens');
 const hudHp = document.getElementById('hp');
 const msgEl = document.getElementById('msg');
@@ -107,41 +99,52 @@ const joystick = document.getElementById('joystick');
 const stick = document.getElementById('stick');
 const interactBtn = document.getElementById('interact');
 
-function resize() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
+function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
 resize();
 window.addEventListener('resize', resize);
-window.addEventListener('orientationchange', () => setTimeout(resize, 150));
+window.addEventListener('orientationchange', () => setTimeout(resize, 120));
 
 const WORLD = { w: 2200, h: 1500 };
-const characters = [
-  { name: 'Alex', color: '#4caf50', speed: 3.6, stat: 'Быстрый' },
-  { name: 'Maya', color: '#2196f3', speed: 3.3, stat: 'Тихая' },
-  { name: 'Leo', color: '#ff9800', speed: 3.8, stat: 'Ловкий' }
+const survivors = [
+  { name: 'Alex', color: '#4caf50', speed: 3.6 },
+  { name: 'Maya', color: '#2196f3', speed: 3.3 },
+  { name: 'Leo', color: '#ff9800', speed: 3.8 },
+  { name: 'Sofia', color: '#ab47bc', speed: 3.4 }
 ];
-let selectedChar = 0;
-let animTime = 0;
+const killerChar = { name: 'Entity', color: '#c62828', speed: 2.7 };
+let selectedSurvivor = 0;
+let playerIsKiller = false;
 
-characters.forEach((c, i) => {
+survivors.forEach((c, i) => {
   const div = document.createElement('div');
   div.className = 'char' + (i===0?' selected':'');
-  div.innerHTML = `<div class="char-preview" style="background:${c.color}"></div><div class="char-name">${c.name}</div><div class="char-stat">${c.stat}</div>`;
+  div.innerHTML = `<div class="char-preview" style="background:${c.color}"></div><div>${c.name}</div>`;
   div.onclick = () => {
-    document.querySelectorAll('.char').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('#charsList .char').forEach(el => el.classList.remove('selected'));
     div.classList.add('selected');
-    selectedChar = i;
+    selectedSurvivor = i;
   };
-  charsDiv.appendChild(div);
+  charsList.appendChild(div);
 });
+
+function showPanel(id) {
+  [mainMenu, playPanel, charsPanel, shopPanel].forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+document.getElementById('btnPlay').onclick = () => showPanel('playPanel');
+document.getElementById('btnChars').onclick = () => showPanel('charsPanel');
+document.getElementById('btnShop').onclick = () => showPanel('shopPanel');
+document.getElementById('backFromPlay').onclick = () => showPanel('mainMenu');
+document.getElementById('backFromChars').onclick = () => showPanel('mainMenu');
+document.getElementById('backFromShop').onclick = () => showPanel('mainMenu');
 
 let gameStarted = false;
 let gameOver = false;
 let win = false;
 
-const player = { x: WORLD.w/2, y: WORLD.h/2, r: 18, hp: 3, speed: 3.5, color: '#4caf50', angle: 0, bob: 0, moving: false };
-const killer = { x: 300, y: 300, r: 24, speed: 2.6, color: '#c62828', angle: 0, bob: 0 };
+const player = { x: 0, y: 0, r: 18, hp: 3, speed: 3.5, color: '#4caf50', angle: 0, bob: 0, moving: false, isKiller: false };
+const bots = [];
+const killerBot = { x: 300, y: 300, r: 24, speed: 2.6, color: '#c62828', angle: 0, bob: 0, isPlayer: false };
 
 const gens = [
   { x: 380, y: 320, r: 34, progress: 0, done: false },
@@ -149,309 +152,208 @@ const gens = [
   { x: 480, y: 1120, r: 34, progress: 0, done: false },
   { x: 1580, y: 1080, r: 34, progress: 0, done: false }
 ];
-
 const walls = [
   { x: 520, y: 520, w: 240, h: 40 },
   { x: 1050, y: 280, w: 40, h: 300 },
   { x: 780, y: 900, w: 360, h: 48 },
-  { x: 1250, y: 680, w: 48, h: 240 },
-  { x: 300, y: 700, w: 180, h: 36 }
+  { x: 1250, y: 680, w: 48, h: 240 }
 ];
-
 const trees = [];
-for (let i=0; i<28; i++) {
-  trees.push({
-    x: 100 + Math.random()*(WORLD.w-200),
-    y: 100 + Math.random()*(WORLD.h-200),
-    r: 20 + Math.random()*16,
-    shade: 0.7 + Math.random()*0.3
-  });
-}
+for (let i=0; i<26; i++) trees.push({ x: 100+Math.random()*(WORLD.w-200), y: 100+Math.random()*(WORLD.h-200), r: 18+Math.random()*14 });
+const exit = { x: WORLD.w-160, y: WORLD.h-160, r: 60, open: false };
 
-const ruins = [
-  { x: 900, y: 450, w: 80, h: 60 },
-  { x: 1400, y: 850, w: 70, h: 90 }
-];
+let camera = { x:0, y:0 };
+let joyX=0, joyY=0, interacting=false;
 
-const exit = { x: WORLD.w - 160, y: WORLD.h - 160, r: 60, open: false };
-
-let camera = { x: 0, y: 0 };
-let joystickActive = false;
-let joyX = 0, joyY = 0;
-let interacting = false;
-
-joystick.addEventListener('touchstart', e => {
-  e.preventDefault();
-  joystickActive = true;
-  updateJoy(e.touches[0]);
-}, {passive:false});
-joystick.addEventListener('touchmove', e => {
-  e.preventDefault();
-  if (joystickActive) updateJoy(e.touches[0]);
-}, {passive:false});
-joystick.addEventListener('touchend', () => {
-  joystickActive = false;
-  joyX = joyY = 0;
-  stick.style.transform = 'translate(0,0)';
-});
-
+joystick.addEventListener('touchstart', e => { e.preventDefault(); updateJoy(e.touches[0]); }, {passive:false});
+joystick.addEventListener('touchmove', e => { e.preventDefault(); updateJoy(e.touches[0]); }, {passive:false});
+joystick.addEventListener('touchend', () => { joyX=joyY=0; stick.style.transform='translate(0,0)'; });
 function updateJoy(t) {
-  const rect = joystick.getBoundingClientRect();
-  const cx = rect.left + rect.width/2;
-  const cy = rect.top + rect.height/2;
-  let dx = t.clientX - cx;
-  let dy = t.clientY - cy;
-  const dist = Math.hypot(dx, dy);
-  const max = 46;
-  if (dist > max) {
-    dx = dx / dist * max;
-    dy = dy / dist * max;
-  }
-  joyX = dx / max;
-  joyY = dy / max;
-  stick.style.transform = `translate(${dx}px, ${dy}px)`;
+  const r = joystick.getBoundingClientRect();
+  let dx = t.clientX - (r.left+r.width/2), dy = t.clientY - (r.top+r.height/2);
+  const d = Math.hypot(dx,dy), max=46;
+  if (d>max) { dx=dx/d*max; dy=dy/d*max; }
+  joyX=dx/max; joyY=dy/max;
+  stick.style.transform=`translate(${dx}px,${dy}px)`;
 }
+interactBtn.addEventListener('touchstart', e=>{e.preventDefault();interacting=true;interactBtn.classList.add('active');});
+interactBtn.addEventListener('touchend', ()=>{interacting=false;interactBtn.classList.remove('active');});
 
-interactBtn.addEventListener('touchstart', e => { e.preventDefault(); interacting = true; interactBtn.classList.add('active'); });
-interactBtn.addEventListener('touchend', () => { interacting = false; interactBtn.classList.remove('active'); });
-
-startBtn.onclick = () => {
-  const ch = characters[selectedChar];
-  player.speed = ch.speed;
-  player.color = ch.color;
-  lobby.style.display = 'none';
+function startGame(asKiller) {
+  playerIsKiller = asKiller;
+  player.isKiller = asKiller;
+  if (asKiller) {
+    player.x = 400; player.y = 400; player.color = killerChar.color; player.speed = killerChar.speed; player.r = 24; player.hp = 999;
+    killerBot.isPlayer = true;
+    for (let i=0; i<3; i++) {
+      const c = survivors[i];
+      bots.push({ x: 800+i*200, y: 700+Math.random()*200, r:18, color:c.color, speed:c.speed, angle:0, bob:0, hp:3, isBot:true });
+    }
+  } else {
+    const c = survivors[selectedSurvivor];
+    player.x = WORLD.w/2; player.y = WORLD.h/2; player.color = c.color; player.speed = c.speed; player.r = 18; player.hp = 3;
+    killerBot.isPlayer = false; killerBot.x = 250; killerBot.y = 250;
+    for (let i=0; i<2; i++) {
+      const bc = survivors[(selectedSurvivor+i+1)%survivors.length];
+      bots.push({ x: 600+i*300, y: 600, r:18, color:bc.color, speed:bc.speed, angle:0, bob:0, hp:3, isBot:true });
+    }
+  }
+  mainMenu.style.display='none'; playPanel.style.display='none'; charsPanel.style.display='none'; shopPanel.style.display='none';
   gameStarted = true;
-};
+}
+document.getElementById('btnSurvivor').onclick = () => startGame(false);
+document.getElementById('btnKiller').onclick = () => startGame(true);
 
-function dist(a,b) { return Math.hypot(a.x-b.x, a.y-b.y); }
-
-function collidesWall(x, y, r) {
-  for (const w of walls) {
-    if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) return true;
-  }
-  for (const t of trees) {
-    if (dist({x,y}, t) < r + t.r - 8) return true;
-  }
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function collides(x,y,r){
+  for(const w of walls) if(x+r>w.x && x-r<w.x+w.w && y+r>w.y && y-r<w.y+w.h) return true;
+  for(const t of trees) if(dist({x,y},t)<r+t.r-8) return true;
   return false;
 }
+function showMsg(t){msgEl.textContent=t;msgEl.style.display='block';}
 
-function showMsg(text) {
-  msgEl.textContent = text;
-  msgEl.style.display = 'block';
-}
-
-function drawCharacter(x, y, color, angle, isKiller, bob, moving) {
+function drawChar(x,y,color,angle,isKiller,bob,moving){
   ctx.save();
-  ctx.translate(x, y + Math.sin(bob) * 2);
+  ctx.translate(x, y + Math.sin(bob)*2);
   ctx.rotate(angle);
-
-  ctx.fillStyle = 'rgba(0,0,0,0.4)';
-  ctx.beginPath();
-  ctx.ellipse(0, 14, 15, 7, 0, 0, Math.PI*2);
-  ctx.fill();
-
-  const bodyY = moving ? Math.sin(bob * 2) * 1.5 : 0;
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.ellipse(0, 2 + bodyY, 13, 17, 0, 0, Math.PI*2);
-  ctx.fill();
-  ctx.strokeStyle = '#000';
-  ctx.lineWidth = 1.5;
-  ctx.stroke();
-
+  ctx.fillStyle='rgba(0,0,0,0.35)';
+  ctx.beginPath(); ctx.ellipse(0,14,14,6,0,0,Math.PI*2); ctx.fill();
+  const by = moving ? Math.sin(bob*2)*1.5 : 0;
+  ctx.fillStyle=color;
+  ctx.beginPath(); ctx.ellipse(0,2+by,12,16,0,0,Math.PI*2); ctx.fill();
+  ctx.strokeStyle='#000'; ctx.lineWidth=1.5; ctx.stroke();
   ctx.fillStyle = isKiller ? '#ffcdd2' : '#ffe0b2';
+  ctx.beginPath(); ctx.arc(0,-15+by*0.4,9,0,Math.PI*2); ctx.fill(); ctx.stroke();
+  ctx.fillStyle='#111';
+  ctx.beginPath(); ctx.arc(-3,-16,1.8,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(3,-16,1.8,0,Math.PI*2); ctx.fill();
+  if(isKiller){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(-3,-16,1,0,Math.PI*2); ctx.fill(); ctx.beginPath(); ctx.arc(3,-16,1,0,Math.PI*2); ctx.fill(); }
+  const sw = moving ? Math.sin(bob*3)*6 : 0;
+  ctx.strokeStyle=color; ctx.lineWidth=4; ctx.lineCap='round';
   ctx.beginPath();
-  ctx.arc(0, -16 + bodyY * 0.5, 10, 0, Math.PI*2);
-  ctx.fill();
+  ctx.moveTo(-10,-2); ctx.lineTo(-16+sw*0.2,7+sw);
+  ctx.moveTo(10,-2); ctx.lineTo(16-sw*0.2,7-sw);
   ctx.stroke();
-
-  ctx.fillStyle = '#111';
-  ctx.beginPath(); ctx.arc(-3.5, -17, 2, 0, Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.arc(3.5, -17, 2, 0, Math.PI*2); ctx.fill();
-  if (isKiller) {
-    ctx.fillStyle = '#fff';
-    ctx.beginPath(); ctx.arc(-3.5, -17, 1.2, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(3.5, -17, 1.2, 0, Math.PI*2); ctx.fill();
-  }
-
-  const armSwing = moving ? Math.sin(bob * 3) * 8 : 0;
-  ctx.strokeStyle = color;
-  ctx.lineWidth = 4.5;
-  ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-11, -2);
-  ctx.lineTo(-18 + armSwing * 0.3, 8 + armSwing);
-  ctx.moveTo(11, -2);
-  ctx.lineTo(18 - armSwing * 0.3, 8 - armSwing);
-  ctx.stroke();
-
   ctx.restore();
 }
 
-function update(dt) {
-  animTime += dt * 0.05;
-  if (!gameStarted || gameOver) return;
+function update(dt){
+  if(!gameStarted || gameOver) return;
+  let dx=joyX, dy=joyY, len=Math.hypot(dx,dy);
+  player.moving = len>0.15;
+  if(player.moving){
+    dx/=len; dy/=len; player.angle=Math.atan2(dy,dx);
+    const nx=player.x+dx*player.speed*dt, ny=player.y+dy*player.speed*dt;
+    if(!collides(nx,player.y,player.r)) player.x=nx;
+    if(!collides(player.x,ny,player.r)) player.y=ny;
+    player.x=Math.max(player.r,Math.min(WORLD.w-player.r,player.x));
+    player.y=Math.max(player.r,Math.min(WORLD.h-player.r,player.y));
+    player.bob+=dt*0.22;
+  } else player.bob+=dt*0.07;
 
-  let dx = joyX;
-  let dy = joyY;
-  const len = Math.hypot(dx, dy);
-  player.moving = len > 0.15;
-  if (player.moving) {
-    dx /= len; dy /= len;
-    player.angle = Math.atan2(dy, dx);
-    const nx = player.x + dx * player.speed * dt;
-    const ny = player.y + dy * player.speed * dt;
-    if (!collidesWall(nx, player.y, player.r)) player.x = nx;
-    if (!collidesWall(player.x, ny, player.r)) player.y = ny;
-    player.x = Math.max(player.r, Math.min(WORLD.w - player.r, player.x));
-    player.y = Math.max(player.r, Math.min(WORLD.h - player.r, player.y));
-    player.bob += dt * 0.25;
-  } else {
-    player.bob += dt * 0.08;
-  }
-
-  const toP = dist(killer, player);
-  if (toP > 50) {
-    const kdx = (player.x - killer.x) / toP;
-    const kdy = (player.y - killer.y) / toP;
-    killer.angle = Math.atan2(kdy, kdx);
-    const knx = killer.x + kdx * killer.speed * dt;
-    const kny = killer.y + kdy * killer.speed * dt;
-    if (!collidesWall(knx, killer.y, killer.r)) killer.x = knx;
-    if (!collidesWall(killer.x, kny, killer.r)) killer.y = kny;
-    killer.bob += dt * 0.2;
-  } else {
-    killer.bob += dt * 0.1;
-  }
-
-  if (dist(player, killer) < player.r + killer.r - 8) {
-    player.hp--;
-    hudHp.textContent = player.hp;
-    const kb = 100;
-    const kdx = (player.x - killer.x) / Math.max(1, toP);
-    const kdy = (player.y - killer.y) / Math.max(1, toP);
-    player.x += kdx * kb;
-    player.y += kdy * kb;
-    if (player.hp <= 0) {
-      gameOver = true;
-      showMsg('ПОЙМАН');
+  if(!player.isKiller){
+    const toP=dist(killerBot,player);
+    if(toP>48){
+      const kdx=(player.x-killerBot.x)/toP, kdy=(player.y-killerBot.y)/toP;
+      killerBot.angle=Math.atan2(kdy,kdx);
+      const knx=killerBot.x+kdx*killerBot.speed*dt, kny=killerBot.y+kdy*killerBot.speed*dt;
+      if(!collides(knx,killerBot.y,killerBot.r)) killerBot.x=knx;
+      if(!collides(killerBot.x,kny,killerBot.r)) killerBot.y=kny;
+    }
+    killerBot.bob+=dt*0.15;
+    if(dist(player,killerBot)<player.r+killerBot.r-6){
+      player.hp--; hudHp.textContent=player.hp;
+      const kdx=(player.x-killerBot.x)/Math.max(1,toP), kdy=(player.y-killerBot.y)/Math.max(1,toP);
+      player.x+=kdx*90; player.y+=kdy*90;
+      if(player.hp<=0){ gameOver=true; showMsg('ПОЙМАН'); }
     }
   }
 
-  let doneCount = 0;
-  gens.forEach(g => {
-    if (g.done) { doneCount++; return; }
-    if (dist(player, g) < g.r + 46 && interacting) {
-      g.progress += 0.006 * dt;
-      if (g.progress >= 1) { g.done = true; g.progress = 1; }
+  bots.forEach(b=>{
+    if(b.hp<=0) return;
+    let target = player.isKiller ? player : killerBot;
+    const d = dist(b, target);
+    if(d > 60){
+      const bdx = (target.x - b.x)/d * (player.isKiller ? -1 : 1);
+      const bdy = (target.y - b.y)/d * (player.isKiller ? -1 : 1);
+      b.angle = Math.atan2(bdy, bdx);
+      const bnx = b.x + bdx * b.speed * 0.6 * dt;
+      const bny = b.y + bdy * b.speed * 0.6 * dt;
+      if(!collides(bnx,b.y,b.r)) b.x=bnx;
+      if(!collides(b.x,bny,b.r)) b.y=bny;
     }
-    if (g.done) doneCount++;
+    b.bob += dt*0.12;
+    if(player.isKiller && dist(player,b) < player.r + b.r - 4 && interacting){
+      b.hp--;
+      const kdx=(b.x-player.x)/Math.max(1,dist(player,b)), kdy=(b.y-player.y)/Math.max(1,dist(player,b));
+      b.x += kdx*80; b.y += kdy*80;
+      if(b.hp<=0) b.color='#444';
+    }
   });
-  hudGens.textContent = doneCount;
-  if (doneCount >= 4) exit.open = true;
 
-  if (exit.open && dist(player, exit) < exit.r + player.r) {
-    win = true;
-    gameOver = true;
-    showMsg('СБЕЖАЛ');
+  if(!player.isKiller){
+    let done=0;
+    gens.forEach(g=>{
+      if(g.done){done++;return;}
+      if(dist(player,g)<g.r+44 && interacting){
+        g.progress += 0.006*dt;
+        if(g.progress>=1){g.done=true;g.progress=1;}
+      }
+      if(g.done) done++;
+    });
+    hudGens.textContent=done;
+    if(done>=4) exit.open=true;
+    if(exit.open && dist(player,exit)<exit.r+player.r){ win=true; gameOver=true; showMsg('СБЕЖАЛ'); }
+  } else {
+    let alive = bots.filter(b=>b.hp>0).length;
+    hudGens.textContent = alive;
+    if(alive===0){ gameOver=true; showMsg('ВСЕ ПОЙМАНЫ'); }
   }
 
-  camera.x = player.x - canvas.width/2;
-  camera.y = player.y - canvas.height/2;
-  camera.x = Math.max(0, Math.min(WORLD.w - canvas.width, camera.x));
-  camera.y = Math.max(0, Math.min(WORLD.h - canvas.height, camera.y));
+  const focus = player;
+  camera.x = focus.x - canvas.width/2;
+  camera.y = focus.y - canvas.height/2;
+  camera.x = Math.max(0, Math.min(WORLD.w-canvas.width, camera.x));
+  camera.y = Math.max(0, Math.min(WORLD.h-canvas.height, camera.y));
 }
 
-function draw() {
-  ctx.fillStyle = '#08080c';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  if (!gameStarted) return;
-
+function draw(){
+  ctx.fillStyle='#08080c';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  if(!gameStarted) return;
   ctx.save();
-  ctx.translate(-camera.x, -camera.y);
-
-  const grd = ctx.createRadialGradient(WORLD.w/2, WORLD.h/2, 100, WORLD.w/2, WORLD.h/2, 900);
-  grd.addColorStop(0, '#14141a');
-  grd.addColorStop(1, '#0a0a10');
-  ctx.fillStyle = grd;
-  ctx.fillRect(0, 0, WORLD.w, WORLD.h);
-
-  for (let i=0; i<40; i++) {
-    const gx = (i * 137) % WORLD.w;
-    const gy = (i * 211) % WORLD.h;
-    ctx.fillStyle = 'rgba(20,40,20,0.15)';
-    ctx.beginPath();
-    ctx.ellipse(gx, gy, 30, 18, 0, 0, Math.PI*2);
-    ctx.fill();
+  ctx.translate(-camera.x,-camera.y);
+  ctx.fillStyle='#121218';
+  ctx.fillRect(0,0,WORLD.w,WORLD.h);
+  trees.forEach(t=>{
+    ctx.beginPath(); ctx.arc(t.x,t.y,t.r,0,Math.PI*2);
+    ctx.fillStyle='#1a3a1a'; ctx.fill();
+    ctx.beginPath(); ctx.arc(t.x,t.y-6,t.r*0.5,0,Math.PI*2);
+    ctx.fillStyle='#2a5a2a'; ctx.fill();
+  });
+  walls.forEach(w=>{ ctx.fillStyle='#252528'; ctx.fillRect(w.x,w.y,w.w,w.h); ctx.strokeStyle='#444'; ctx.strokeRect(w.x,w.y,w.w,w.h); });
+  if(!player.isKiller){
+    ctx.beginPath(); ctx.arc(exit.x,exit.y,exit.r,0,Math.PI*2);
+    ctx.fillStyle=exit.open?'#0d47a1':'#121218'; ctx.fill();
+    ctx.strokeStyle=exit.open?'#42a5f5':'#333'; ctx.lineWidth=3; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 15px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(exit.open?'ВЫХОД':'ЗАКРЫТ', exit.x, exit.y+5);
+    gens.forEach(g=>{
+      ctx.beginPath(); ctx.arc(g.x,g.y,g.r,0,Math.PI*2);
+      ctx.fillStyle=g.done?'#2e7d32':'#e65100'; ctx.fill();
+      if(!g.done){ ctx.fillStyle='#000'; ctx.fillRect(g.x-24,g.y-44,48,8); ctx.fillStyle='#fff'; ctx.fillRect(g.x-24,g.y-44,48*g.progress,8); }
+    });
   }
-
-  trees.forEach(t => {
-    ctx.beginPath();
-    ctx.arc(t.x, t.y, t.r, 0, Math.PI*2);
-    ctx.fillStyle = `rgb(${20*t.shade},${50*t.shade},${20*t.shade})`;
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(t.x, t.y - 8, t.r * 0.55, 0, Math.PI*2);
-    ctx.fillStyle = `rgb(${30*t.shade},${70*t.shade},${30*t.shade})`;
-    ctx.fill();
-  });
-
-  walls.forEach(w => {
-    ctx.fillStyle = '#252528';
-    ctx.fillRect(w.x, w.y, w.w, w.h);
-    ctx.strokeStyle = '#444';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(w.x, w.y, w.w, w.h);
-  });
-
-  ruins.forEach(r => {
-    ctx.fillStyle = '#1e1e22';
-    ctx.fillRect(r.x, r.y, r.w, r.h);
-    ctx.strokeStyle = '#333';
-    ctx.strokeRect(r.x, r.y, r.w, r.h);
-  });
-
-  ctx.beginPath();
-  ctx.arc(exit.x, exit.y, exit.r, 0, Math.PI*2);
-  ctx.fillStyle = exit.open ? '#0d47a1' : '#121218';
-  ctx.fill();
-  ctx.strokeStyle = exit.open ? '#42a5f5' : '#333';
-  ctx.lineWidth = 4;
-  ctx.stroke();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 16px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.fillText(exit.open ? 'ВЫХОД' : 'ЗАКРЫТ', exit.x, exit.y + 6);
-
-  gens.forEach(g => {
-    ctx.beginPath();
-    ctx.arc(g.x, g.y, g.r, 0, Math.PI*2);
-    ctx.fillStyle = g.done ? '#2e7d32' : '#e65100';
-    ctx.fill();
-    ctx.strokeStyle = '#000';
-    ctx.lineWidth = 2;
-    ctx.stroke();
-    if (!g.done) {
-      ctx.fillStyle = '#000';
-      ctx.fillRect(g.x - 26, g.y - 46, 52, 10);
-      ctx.fillStyle = '#fff';
-      ctx.fillRect(g.x - 26, g.y - 46, 52 * g.progress, 10);
-    }
-  });
-
-  drawCharacter(killer.x, killer.y, killer.color, killer.angle, true, killer.bob, true);
-  drawCharacter(player.x, player.y, player.color, player.angle, false, player.bob, player.moving);
-
+  if(!player.isKiller) drawChar(killerBot.x,killerBot.y,killerBot.color,killerBot.angle,true,killerBot.bob,true);
+  bots.forEach(b=>{ if(b.hp>0) drawChar(b.x,b.y,b.color,b.angle,false,b.bob,true); });
+  drawChar(player.x,player.y,player.color,player.angle,player.isKiller,player.bob,player.moving);
   ctx.restore();
 }
 
-let last = performance.now();
-function loop(t) {
-  const dt = Math.min(40, t - last) / 16.67;
-  last = t;
-  update(dt);
-  draw();
+let last=performance.now();
+function loop(t){
+  const dt=Math.min(40,t-last)/16.67; last=t;
+  update(dt); draw();
   requestAnimationFrame(loop);
 }
 requestAnimationFrame(loop);
